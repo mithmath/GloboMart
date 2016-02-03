@@ -1,87 +1,100 @@
 package com.globomart.pricing.service;
 
+import javax.annotation.PreDestroy;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
 import com.couchbase.client.java.document.JsonDocument;
 import com.couchbase.client.java.document.json.JsonObject;
+import com.globomart.pricing.CouchbaseConnection;
 import com.globomart.pricing.domain.Price;
 
 public class CouchDataManagerService {
 	
+	private  CouchbaseConnection config;
+
+    private  Bucket bucket;
+    private  Cluster cluster;
+
+    
+    
+    @Autowired
+    public CouchDataManagerService(CouchbaseConnection config) {
+    	
+        this.config = config;
+
+        //connect to the cluster and open the configured bucket
+        
+        this.cluster = CouchbaseCluster.create(config.getNodes());
+        this.bucket = cluster.openBucket(config.getBucket(), config.getPassword());
+       
+    }
+    
+    public CouchDataManagerService() {
+		// TODO Auto-generated constructor stub
+	}
+
+	
 	public boolean addItem(Price prc) throws Exception {
-
-		// Connect to localhost
-		Cluster cluster = CouchbaseCluster.create();
-
-		// Open the default bucket and the "JavaTraining" 
-		
-		Bucket JavaTraining = cluster.openBucket("JavaTraining", "javatraining");
+       try{
 		JsonObject Price = JsonObject.empty().put("productId", prc.getprductId()).put("productName", prc.getproductName())
 				.put("productPrice", prc.getproductPrice());
-		JavaTraining.upsert(JsonDocument.create(prc.getprductId(), Price));
-
-		// Disconnect and clear all allocated resources
-		cluster.disconnect();
-       
+		bucket.upsert(JsonDocument.create(prc.getprductId(), Price));  
+       }catch(Exception ex){
+    	   ex.printStackTrace();
+			return false;
+       }
 		return true;
 	}
 	
-	public String updateItem(Price prc)  {
+	
+	public boolean updateItem(Price prc)  {
 
-		// Connect to localhost
-		Cluster cluster = CouchbaseCluster.create();
-
-		// Open the default bucket and the "JavaTraining" 
-		
-		Bucket JavaTraining = cluster.openBucket("JavaTraining", "javatraining");
-		
+				
 		try{
 		JsonObject Price = JsonObject.empty().put("productId", prc.getprductId()).put("productName", prc.getproductName())
 				.put("productPrice", prc.getproductPrice());
-		JavaTraining.replace(JsonDocument.create(prc.getprductId(), Price));
+		 bucket.replace(JsonDocument.create(prc.getprductId(), Price));
 		}catch(Exception ex){
 			ex.printStackTrace();
-			return null;
+			return false;
 		}
-		cluster.disconnect(); 
-       	return "OK";
+		    return true;
            }
 	
-	public JsonObject getItem(String productId){
+	public JsonDocument getItem(String productId){
 		
-		
-		Cluster cluster = CouchbaseCluster.create();
-		Bucket JavaTraining = cluster.openBucket("JavaTraining", "javatraining");
-		
-		JsonDocument Product = JavaTraining.get(productId);
+		JsonDocument Product = bucket.get(productId);
 		
 		if(Product == null){
-			cluster.disconnect();
 			return null;
 		}else{
-			JsonObject p1=Product.content();
-			cluster.disconnect();
-			return p1 ;
+			return Product ;
 		}
 		
 		
 	}
-  public String removeItem(String productId){
+  public boolean removeItem(String productId){
 		
-		
-		Cluster cluster = CouchbaseCluster.create();
-		Bucket JavaTraining = cluster.openBucket("JavaTraining", "javatraining");
 		try{
-		JsonDocument Product = JavaTraining.remove(productId);
+		JsonDocument Product = bucket.remove(productId);
 		 System.out.println("Cas Value: " + Product.cas());
 	     System.out.println("Catalog: " + Product.content());
 		}catch(Exception ex){
 			ex.printStackTrace();
-			return "error";
+			return false;
 		}
-		cluster.disconnect(); 
-       	return "OK";
+		    return true;
 		
 	}
+  
+  @PreDestroy
+  public void preDestroy() {
+      if (this.cluster != null) {
+          this.cluster.disconnect();
+      }
+  }
 }

@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
-Implementation-Vendor: Pivotal Software, Inc.
 Implementation-Title: MartPricing
 Implementation-Version: 0.0.1-SNAPSHOT
-Implementation-Vendor-Id: com.gobomart
-Build-Jdk: 1.7.0_80
 Built-By: mmath6
+Implementation-Vendor-Id: com.gobomart
+Build-Jdk: 1.8.0_71
 Created-By: Maven Integration for Eclipse
+Implementation-Vendor: Pivotal Software, Inc.
 

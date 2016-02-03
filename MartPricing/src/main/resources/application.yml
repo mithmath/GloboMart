@@ -1,0 +1,5 @@
+couchbase.bucket: GMartPrice
+couchbase.password: gmartprice
+couchbase.nodes: 127.0.0.1
+
+server.port : 9090
